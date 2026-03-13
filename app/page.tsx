@@ -37,22 +37,17 @@ export default function Dashboard() {
   return (
     <main className="min-h-screen bg-gray-950 text-green-400 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-green-400 font-mono">AXIOM Dashboard</h1>
-            <p className="text-gray-500 text-sm mt-1">Local-first AI agent monitoring · Powered by PowerSync</p>
+            <p className="text-gray-500 text-sm mt-1">Local-first AI agent monitoring - Powered by PowerSync</p>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-xs text-gray-400 font-mono">LIVE · SQLite synced</span>
+            <span className="text-xs text-gray-400 font-mono">LIVE - SQLite synced</span>
           </div>
         </div>
-
-        {/* P&L Widget */}
         <PnLWidget />
-
-        {/* Agent Grid */}
         <div>
           <h2 className="text-lg font-semibold text-gray-300 mb-3 font-mono">Agent Fleet</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -66,15 +61,11 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
-
-        {/* Last result */}
         {lastResult && (
           <div className="bg-gray-900 border border-green-800 rounded p-4 font-mono text-sm text-green-300">
             <span className="text-gray-500">last_output: </span>{lastResult}
           </div>
         )}
-
-        {/* Bottom row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <TaskFeed />
           <PositionTable />
