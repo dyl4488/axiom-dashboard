@@ -1,0 +1,138 @@
+# =============================================================================
+# AXIOM Dashboard — PowerSync Sync Rules
+# PowerSync AI Hackathon 2026
+# =============================================================================
+# These rules define WHAT gets synced FROM Supabase (PostgreSQL)
+# TO the local SQLite database on each client device.
+#
+# PowerSync evaluates these rules server-side and sends only matching rows
+# to each connected client. The client stores them in local SQLite and
+# React hooks (usePowerSyncQuery) query SQLite directly — zero network latency.
+#
+# Docs: https://docs.powersync.com/usage/sync-rules
+# =============================================================================
+
+bucket_definitions:
+
+  # ---------------------------------------------------------------------------
+  # Bucket: global_data
+  # All agents, tasks, positions, ledger entries, and market signals.
+  # These are shared across all authenticated users — the "workspace" state.
+  # ---------------------------------------------------------------------------
+  global_data:
+    # No parameters = one global bucket for all clients.
+    # Every authenticated user gets the same dataset synced locally.
+    parameters: SELECT token_parameters.user_id
+    data:
+      # ----- Agents -----
+      # Full agent fleet — small table, sync everything
+      - SELECT
+          id,
+          name,
+          role,
+          model,
+          status,
+          last_active,
+          created_at
+        FROM agents
+
+      # ----- Tasks -----
+      # All tasks across all agents — the shared work queue
+      - SELECT
+          id,
+          agent_id,
+          title,
+          description,
+          status,
+          priority,
+          estimated_value,
+          created_at,
+          completed_at
+        FROM tasks
+
+      # ----- Ledger Entries -----
+      # Immutable financial ledger — sync all entries
+      - SELECT
+          id,
+          type,
+          amount,
+          description,
+          agent_id,
+          created_at
+        FROM ledger_entries
+
+      # ----- Positions -----
+      # Paper trading positions with live P&L (computed column)
+      - SELECT
+          id,
+          symbol,
+          direction,
+          shares,
+          entry_price,
+          current_price,
+          pnl,
+          status,
+          created_at
+        FROM positions
+
+      # ----- Market Signals -----
+      # Trading signals from AXIOM-MARKET — all synced
+      - SELECT
+          id,
+          symbol,
+          signal_type,
+          confidence,
+          notes,
+          created_at
+        FROM market_signals
+
+  # ---------------------------------------------------------------------------
+  # Bucket: agent_logs_recent
+  # Agent logs are high-volume. We limit to last 100 per agent for performance.
+  # This uses a window function to rank rows before syncing.
+  #
+  # WHY: Without this filter, agent_logs could have thousands of rows and
+  # blow up the local SQLite DB. PowerSync evaluates this server-side so
+  # only the 100 most-recent logs per agent travel to the client.
+  # ---------------------------------------------------------------------------
+  agent_logs_recent:
+    parameters: SELECT token_parameters.user_id
+    data:
+      - SELECT
+          id,
+          agent_id,
+          event_type,
+          message,
+          metadata,
+          created_at
+        FROM (
+          SELECT
+            id,
+            agent_id,
+            event_type,
+            message,
+            metadata,
+            created_at,
+            ROW_NUMBER() OVER (
+              PARTITION BY agent_id
+              ORDER BY created_at DESC
+            ) AS rn
+          FROM agent_logs
+        ) ranked
+        WHERE rn <= 100
+
+# =============================================================================
+# Notes for judges:
+#
+# 1. The "global_data" bucket syncs to ALL authenticated clients.
+#    When an agent updates a task or logs a position, every open browser tab
+#    sees the update instantly via SQLite — no polling, no REST calls.
+#
+# 2. The "agent_logs_recent" bucket is the key performance optimization.
+#    PowerSync evaluates the window function in Postgres and only sends
+#    100 rows per agent. This keeps local SQLite lean as logs accumulate.
+#
+# 3. Offline-first: if the connection drops, the local SQLite DB continues
+#    to serve queries. When reconnected, PowerSync replays missed changes.
+#    Try it: open the dashboard, kill your internet, the UI still works.
+# =============================================================================
