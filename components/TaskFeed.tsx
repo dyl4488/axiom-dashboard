@@ -1,18 +1,9 @@
 "use client";
 import { usePowerSyncQuery } from "@powersync/react";
-
 interface Task { id: string; title: string; status: string; priority: number; estimated_value: number | null; agent_name: string | null; }
-
-const statusDot: Record<string, string> = {
-  pending: "bg-yellow-400", in_progress: "bg-blue-400", completed: "bg-green-400", failed: "bg-red-400", cancelled: "bg-gray-600",
-};
-
+const statusDot: Record<string, string> = { pending: "bg-yellow-400", in_progress: "bg-blue-400", completed: "bg-green-400", failed: "bg-red-400", cancelled: "bg-gray-600" };
 export function TaskFeed() {
-  const tasks = usePowerSyncQuery<Task>(
-    `SELECT t.id, t.title, t.status, t.priority, t.estimated_value, a.name as agent_name
-     FROM tasks t LEFT JOIN agents a ON t.agent_id = a.id
-     ORDER BY t.priority ASC, t.created_at DESC LIMIT 20`
-  );
+  const tasks = usePowerSyncQuery<Task>("SELECT t.id, t.title, t.status, t.priority, t.estimated_value, a.name as agent_name FROM tasks t LEFT JOIN agents a ON t.agent_id = a.id ORDER BY t.priority ASC, t.created_at DESC LIMIT 20");
   return (
     <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
       <h3 className="font-mono font-semibold text-gray-300 mb-3">Task Queue <span className="text-gray-600 text-xs">({tasks.length})</span></h3>
