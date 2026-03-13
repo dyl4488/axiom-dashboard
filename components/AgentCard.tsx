@@ -1,8 +1,8 @@
 "use client";
 import { usePowerSyncQuery } from "@powersync/react";
 
-interface Agent { id: string; name: string; role: string; model: string; status: string; last_active: string | null; }
-interface Props { agent: Agent; onTrigger: () => void; isTriggering: boolean; }
+interface AgentData { id: string; name: string; role: string; model: string; status: string; last_active: string | null; }
+interface AgentCardProps { agent: AgentData; onTrigger: () => void; isTriggering: boolean; }
 
 const statusColor: Record<string, string> = {
   active: "text-green-400 bg-green-400/10 border-green-800",
@@ -11,9 +11,9 @@ const statusColor: Record<string, string> = {
   offline: "text-gray-600 bg-gray-900 border-gray-800",
 };
 
-export function AgentCard({ agent, onTrigger, isTriggering }: Props) {
-  const logs = usePowerSyncQuery<{ message: string; event_type: string; created_at: string }>(
-    "SELECT message, event_type, created_at FROM agent_logs WHERE agent_id = ? ORDER BY created_at DESC LIMIT 1",
+export function AgentCard({ agent, onTrigger, isTriggering }: AgentCardProps) {
+  const logs = usePowerSyncQuery<{ message: string; event_type: string }>(
+    "SELECT message, event_type FROM agent_logs WHERE agent_id = ? ORDER BY created_at DESC LIMIT 1",
     [agent.id]
   );
   const lastLog = logs[0];
@@ -25,12 +25,9 @@ export function AgentCard({ agent, onTrigger, isTriggering }: Props) {
       </div>
       <p className="text-xs text-gray-500">{agent.role}</p>
       <p className="text-xs text-gray-600 font-mono">{agent.model}</p>
-      {lastLog && <p className="text-xs text-gray-500 truncate" title={lastLog.message}>{lastLog.message}</p>}
-      <button
-        onClick={onTrigger}
-        disabled={isTriggering}
-        className="w-full mt-2 py-1 px-3 text-xs font-mono rounded border border-green-800 text-green-400 hover:bg-green-400/10 disabled:opacity-40 transition"
-      >
+      {lastLog && <p className="text-xs text-gray-500 truncate">{lastLog.message}</p>}
+      <button onClick={onTrigger} disabled={isTriggering}
+        className="w-full mt-2 py-1 px-3 text-xs font-mono rounded border border-green-800 text-green-400 hover:bg-green-400/10 disabled:opacity-40 transition">
         {isTriggering ? "running..." : "trigger"}
       </button>
     </div>
