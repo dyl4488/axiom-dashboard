@@ -1,19 +1,13 @@
 "use client";
 import { usePowerSyncQuery } from "@powersync/react";
-
 export function PnLWidget() {
   const income = usePowerSyncQuery<{ total: number }>("SELECT COALESCE(SUM(amount), 0) as total FROM ledger_entries WHERE type = 'income'");
   const spend = usePowerSyncQuery<{ total: number }>("SELECT COALESCE(SUM(amount), 0) as total FROM ledger_entries WHERE type = 'spend'");
   const positions = usePowerSyncQuery<{ total: number }>("SELECT COALESCE(SUM(pnl), 0) as total FROM positions WHERE status = 'open'");
-  const recent = usePowerSyncQuery<{ type: string; amount: number; description: string }>(
-    "SELECT type, amount, description FROM ledger_entries ORDER BY created_at DESC LIMIT 5"
-  );
-
   const totalIncome = income[0]?.total ?? 0;
   const totalSpend = spend[0]?.total ?? 0;
   const posPnL = positions[0]?.total ?? 0;
   const net = totalIncome - totalSpend + posPnL;
-
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {[
